@@ -1,8 +1,11 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { GardensService } from './gardens.service';
 import { CreateGardenDto } from './dto/create-garden.dto';
 import { UpdateGardenDto } from './dto/update-garden.dto';
+import { Roles } from 'src/common/roles.decorator';
+import { Role } from 'src/common/role.enum';
+import { RolesGuard } from 'src/auth/roles.guard';
 
 @Controller('gardens')
 export class GardensController {
@@ -11,6 +14,8 @@ export class GardensController {
 
   @ApiBearerAuth()
   @ApiOperation({description: "Add new garden"})
+  @UseGuards(RolesGuard)
+  @Roles(Role.User)
   @Post()
   create(@Request() req, @Body() createGardenDto: CreateGardenDto){
     return this.gardensService.create(req.user, createGardenDto);
@@ -45,6 +50,8 @@ export class GardensController {
 
   @ApiBearerAuth()
   @ApiOperation({description: 'Update a garden'})
+  @UseGuards(RolesGuard)
+  @Roles(Role.User)
   @Patch(':id')
   updateOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number, @Body() updateGardenDto: UpdateGardenDto){
     return this.gardensService.update(req.user, gardenId, updateGardenDto);
@@ -52,6 +59,8 @@ export class GardensController {
 
   @ApiBearerAuth()
   @ApiOperation({description: 'Delete a garden'})
+  @UseGuards(RolesGuard)
+  @Roles(Role.User)
   @Delete(':id')
   deleteOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number) {
     return this.gardensService.delete(req.user, gardenId);

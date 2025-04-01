@@ -4,30 +4,20 @@ import { UpdateVegetablePriceDto } from './dto/update-vegetable-price.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateVegetableDto } from './dto/update-vegetable.dto';
 import { ResponseObject } from 'src/common/response-object';
+import { GardensService } from 'src/gardens/gardens.service';
+import { Role } from 'src/common/role.enum';
 
 @Injectable()
 export class VegetablesService {
 
-  constructor(private prisma: PrismaService){}
+  constructor(private prisma: PrismaService, private gardensService: GardensService){}
 
   /////////////////////////////////////////////////
   /////////////////////////////////////////////////
   // Common function
 
-  // query user's infor using userId
-  async checkUserId(userId: number){
-    return await this.prisma.user.findUnique({where: {id: userId}});
-  }
-
-  // query garden's infor using userId and gardenId
-  async checkGardenId(userId: number, gardenId: number){
-    return await this.prisma.garden.findUnique({where: {id: gardenId, userId: userId}});
-  }
-
-  // query vegetable's infor using userId and vegetableId
-  async checkVegetableId(userId: number, vegetableId: number){
+  async checkExistingVegetable(vegetableId: number){
     return await this.prisma.vegetable.findUnique({
-      include: {garden: true},
       where: {id: vegetableId}
     });
   }
@@ -39,9 +29,9 @@ export class VegetablesService {
   // Function for Vegetable
 
   // TODO: add new vegetable
-  async create(userId: number, createVegetableDto: CreateVegetableDto){
-    const garden = this.checkGardenId(userId, createVegetableDto.gardenId);
-    if(!garden){
+  async create(user: any, createVegetableDto: CreateVegetableDto){
+    const garden = await this.gardensService.checkExistingGarden(createVegetableDto.gardenId);
+    if(!garden || garden.userId != user.id){
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
     }
 
@@ -60,18 +50,28 @@ export class VegetablesService {
 
   // TODO: get the list of vegetables
   async findMany(
-    userId: number,
+    user: any,
     page: number = 1,
     limit: number = 10,
     sortBy: string = 'name',
     sortOrder: 'asc' | 'desc' = 'asc',
     gardenId: number,
   ){
-    const garden = this.checkGardenId(userId, gardenId);
-    if(!garden){
-      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
+    const garden = await this.gardensService.checkExistingGarden(gardenId);
+
+    if(user.role == Role.Admin){
+      if(!garden){
+        return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
+      }
     }
-    // return await this.prisma.vegetable.findMany({where: })
+    else if(user.role == Role.User){
+      if(!garden || garden.userId != user.id){
+        return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
+      }
+    }
+    else{
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "What is your role?");
+    }
     const skip = (page-1)*limit;
     
     const vegetables = await this.prisma.vegetable.findMany({
@@ -89,24 +89,48 @@ export class VegetablesService {
   }
 
   // TODO: get the detail of one vegetables
-  async findOne(userId: number, vegetableId: number){
-    const vegetable = await this.checkVegetableId(userId, vegetableId);
-    if(!vegetable || userId != vegetable.garden.userId){
+  async findOne(user: any, vegetableId: number){
+    // check if the vegetable id is valid
+    const vegetable = await this.prisma.vegetable.findUnique({where: {id: vegetableId}});
+    if(!vegetable){
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+    }
+
+    // check if the vegetable belongs to the garden of this user
+    const garden = await this.gardensService.checkExistingGarden(vegetable.gardenId);
+    if(user.role == Role.Admin){
+      if(!garden){
+        return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+      }
+    }
+    else if(user.role == Role.User){
+      if(!garden || garden.userId != user.id){
+        return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+      }
+    }
+    else{
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "What is your role?");
     }
 
     return new ResponseObject(HttpStatus.OK, "success", vegetable);
   }
 
   // TODO: update the in-quantity, sale-quantity of one vegetable
-  async updateOne(userId: number, vegetableId: number, updateVegetableDto: UpdateVegetableDto){
+  async updateOne(user: any, vegetableId: number, updateVegetableDto: UpdateVegetableDto){
 
     if(!updateVegetableDto.name && !updateVegetableDto.inQuantity && !updateVegetableDto.saleQuantity){
       return new ResponseObject(HttpStatus.OK, "No data to update");
     }
 
-    const vegetable = await this.checkVegetableId(userId, vegetableId);
-    if(!vegetable || userId != vegetable.garden.userId){
+    // check if the vegetable id is valid
+    const vegetable = await this.prisma.vegetable.findUnique({where: {id: vegetableId}});
+    if(!vegetable){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+    }
+
+    // check if the vegetable belongs to the garden of this user
+    const garden = await this.gardensService.checkExistingGarden(vegetable.gardenId);
+    if(!garden || garden.userId != user.id){
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
     }
 
@@ -134,19 +158,43 @@ export class VegetablesService {
   // Function for Price of Vegetable
 
   // TODO: get the price
-  async getPrice(userId: number, vegetableId: number){
-    const vegetable = await this.checkVegetableId(userId, vegetableId);
-    if(!vegetable || userId != vegetable.garden.userId){
-      return new ResponseObject(HttpStatus.OK, "Invalid vegetableId");
+  async getPrice(user: any, vegetableId: number){
+    // check if the vegetable id is valid
+    const vegetable = await this.prisma.vegetable.findUnique({where: {id: vegetableId}});
+    if(!vegetable){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+    }
+
+    // check if the vegetable belongs to the garden of this user
+    const garden = await this.gardensService.checkExistingGarden(vegetable.gardenId);
+    if(user.role == Role.Admin){
+      if(!garden){
+        return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+      }
+    }
+    else if(user.role == Role.User){
+      if(!garden || garden.userId != user.id){
+        return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+      }
+    }
+    else{
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "What is your role?");
     }
 
     return new ResponseObject(HttpStatus.OK, "success", vegetable.price);
   } 
 
   // TODO: update the price
-  async updatePrice(userId: number, vegetableId: number, updateVegetablePriceDto: UpdateVegetablePriceDto){
-    const vegetable = await this.checkVegetableId(userId, vegetableId);
-    if(!vegetable || userId != vegetable.garden.userId){
+  async updatePrice(user: any, vegetableId: number, updateVegetablePriceDto: UpdateVegetablePriceDto){
+    // check if the vegetable id is valid
+    const vegetable = await this.prisma.vegetable.findUnique({where: {id: vegetableId}});
+    if(!vegetable){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+    }
+
+    // check if the vegetable belongs to the garden of this user
+    const garden = await this.gardensService.checkExistingGarden(vegetable.gardenId);
+    if(!garden || garden.userId != user.id){
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
     }
 
@@ -160,9 +208,16 @@ export class VegetablesService {
   
 
   // TODO: get the price
-  async deletePrice(userId: number, vegetableId: number){
-    const vegetable = await this.checkVegetableId(userId, vegetableId);
-    if(!vegetable || userId != vegetable.garden.userId){
+  async deletePrice(user: any, vegetableId: number){
+    // check if the vegetable id is valid
+    const vegetable = await this.prisma.vegetable.findUnique({where: {id: vegetableId}});
+    if(!vegetable){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+    }
+
+    // check if the vegetable belongs to the garden of this user
+    const garden = await this.gardensService.checkExistingGarden(vegetable.gardenId);
+    if(!garden || garden.userId != user.id){
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
     }
 

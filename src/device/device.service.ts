@@ -3,6 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { LightSignalDto } from './dto/light-signal.dto';
 import { ResponseObject } from 'src/common/response-object';
 import { GardensService } from 'src/gardens/gardens.service';
+import { Role } from 'src/common/role.enum';
 
 @Injectable()
 export class DeviceService {
@@ -13,9 +14,20 @@ export class DeviceService {
 
   async controlLight(user: any, topic: string, lightSignalDto: LightSignalDto){
     const garden = await this.gardensService.checkExistingGarden(lightSignalDto.gardenId);
-    if(!garden || garden.userId != user.id){
-      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
+    if(user.role == Role.Admin){
+      if(!garden){
+        return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
+      }
     }
+    else if(user.role == Role.User){
+      if(!garden || garden.userId != user.id){
+        return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
+      }
+    }
+    else{
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "What is your role?");
+    }
+    
     await this.client.emit(topic, lightSignalDto);
     return new ResponseObject(HttpStatus.OK, "success");
   }

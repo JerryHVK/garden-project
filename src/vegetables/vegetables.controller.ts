@@ -1,9 +1,12 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { VegetablesService } from './vegetables.service';
 import { CreateVegetableDto } from './dto/create-vegetable.dto';
 import { UpdateVegetableDto } from './dto/update-vegetable.dto';
 import { UpdateVegetablePriceDto } from './dto/update-vegetable-price.dto';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/common/roles.decorator';
+import { Role } from 'src/common/role.enum';
 
 @Controller('vegetables')
 export class VegetablesController {
@@ -25,9 +28,11 @@ export class VegetablesController {
   // TODO: Create new vegetable
   @ApiBearerAuth()
   @ApiOperation({description: 'Add new vegetable'})
+  @UseGuards(RolesGuard)
+  @Roles(Role.User)
   @Post() // add new vegetable
   create(@Request() req, @Body() createVegetableDto: CreateVegetableDto){
-    return this.vegetablesService.create(req.user.id, createVegetableDto);
+    return this.vegetablesService.create(req.user, createVegetableDto);
   }
 
 
@@ -51,7 +56,7 @@ export class VegetablesController {
     page = +page;
     limit = +limit;
     limit = limit <= 100 ? limit : 5
-    return this.vegetablesService.findMany(req.user.id, page, limit, sortBy, sortOrder, gardenId);
+    return this.vegetablesService.findMany(req.user, page, limit, sortBy, sortOrder, gardenId);
   }
 
   // TODO: Get the detail of one vegetable
@@ -59,15 +64,17 @@ export class VegetablesController {
   @ApiOperation({description: 'Get a vegetable by id'})
   @Get(':id')
   findOne(@Request() req, @Param('id', ParseIntPipe) vegetableId: number){
-    return this.vegetablesService.findOne(req.user.id, vegetableId);
+    return this.vegetablesService.findOne(req.user, vegetableId);
   }
 
   // TODO: Update the in-quantity, sale-quantity of one vegetable
   @ApiBearerAuth()
   @ApiOperation({description: 'Update the in-quantity and sale-quantity of a vegetable'})
+  @UseGuards(RolesGuard)
+  @Roles(Role.User)
   @Patch(':id')
   updateOne(@Request() req, @Param('id', ParseIntPipe) vegetableId: number, @Body() updateVegetableDto: UpdateVegetableDto){
-    return this.vegetablesService.updateOne(req.user.id, vegetableId, updateVegetableDto);
+    return this.vegetablesService.updateOne(req.user, vegetableId, updateVegetableDto);
   }
 
 
@@ -90,23 +97,27 @@ export class VegetablesController {
   @ApiOperation({description: 'Get price of a vegetable'})
   @Get(':id/price')
   getPrice(@Request() req, @Param('id', ParseIntPipe) vegetableId: number){
-    return this.vegetablesService.getPrice(req.user.id, vegetableId);
+    return this.vegetablesService.getPrice(req.user, vegetableId);
   }
 
   // TODO: Update the price
   @ApiBearerAuth()
   @ApiOperation({description: 'Update price of a vegetable'})
+  @UseGuards(RolesGuard)
+  @Roles(Role.User)
   @Patch(':id/price')
   updatePrice(@Request() req, @Param('id', ParseIntPipe) vegetableId: number, @Body() updateVegetablePriceDto: UpdateVegetablePriceDto){
-    return this.vegetablesService.updatePrice(req.user.id, vegetableId, updateVegetablePriceDto);
+    return this.vegetablesService.updatePrice(req.user, vegetableId, updateVegetablePriceDto);
   }
 
   // TODO: Delte the price
   @ApiBearerAuth()
   @ApiOperation({description: 'Delete price of a vegetable'})
+  @UseGuards(RolesGuard)
+  @Roles(Role.User)
   @Delete(':id/price')
   deletePrice(@Request() req, @Param('id', ParseIntPipe) vegetableId: number){
-    return this.vegetablesService.deletePrice(req.user.id, vegetableId);
+    return this.vegetablesService.deletePrice(req.user, vegetableId);
   }
 
   

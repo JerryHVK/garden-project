@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import * as jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 import { GardensService } from 'src/gardens/gardens.service';
+import { Role } from 'src/common/role.enum';
 
 @WebSocketGateway({transports: ['websocket']})
 export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -37,10 +38,24 @@ export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // check if the gardenId is valid, and that garden belongs to this user
     const userId = decoded.sub;
+    const role = decoded.role;
     const gardenId = data.gardenId;
     const garden = await this.gardensService.checkExistingGarden(gardenId);
-    if(!garden || garden.userId != userId){
-      client.emit('fromServer', 'Invalid gardenId');
+
+    if(role == Role.Admin){
+      if(!garden){
+        client.emit('fromServer', 'Invalid gardenId');
+        return;
+      }
+    }
+    else if(role == Role.User){
+      if(!garden || garden.userId != userId){
+        client.emit('fromServer', 'Invalid gardenId');
+        return;
+      }
+    }
+    else{
+      client.emit('fromServer', 'What is your role?')
       return;
     }
 
