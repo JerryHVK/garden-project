@@ -1,0 +1,98 @@
+CRUD cho khu vườn, loại rau và dữ liệu cảm biến
+
+Mình sẽ còn phải tự thiết kế một vài ngữ cảnh cho hợp lí rồi mới đủ dữ liệu để làm
+
+Một garden có nhiều dữ liệu cảm biến, chứ không phải có nhiều cảm biến nha. Cho mỗi garden một cảm biến thôi
+
+GARDEN
+1. POST /gardens: tạo garden (chỉ User sở hữu hoăc Admin)
+	admin tạo cho admin hay admin tạo vườn cho user? Cho admin đi cho đỡ mệt
+
+2. GET /gardens: lấy danh sách garden (User chỉ thấy của mình, Admin thấy tất cả)
+	có thể có 1 api đáp ứng cả 2 1 lúc ko?
+
+3. GET /gardens/:id : lấy chi tiết khu vườn
+	chi tiết có bao gồm các loại rau?price
+
+4. PUT /gardens/:id : cập nhật garden
+	garden hiện tại có mỗi cái tên là cập nhật được, sau này chắc sẽ có location, rồi diện tích chẳng hạn
+
+5. DELETE /gardens/:id : xóa garden
+
+
+AUTH
+
+1. POST /login
+
+2. POST /signup
+
+VEGETABLE
+1. POST /vegetables : thêm loại rau
+
+2. GET /vegetables : lấy danh sách rau -> đoạn này có thể thực hiện lọc theo khu vườn hay gì đấy, cái đấy tùy, để bên frontend dùng
+
+3. GET /vegetables/:id : xem chi tiết của một loại rau
+
+4. PUT /vegetables/:id : cập nhật số lượng nhập/bán của rau
+
+
+5. POST /vegetable/:id/price: Nhập giá của rau
+
+6. PUT /vegetables/:id/price : Sửa giá của rau
+
+7. DELETE /vegetables/:id/price: Xóa giá của rau
+
+8. GET /vegetables/:id/price: Lấy giá của rau
+
+
+9. GET /price/ : lấy danh sách giá theo ngày, tuần, tháng -> danh sách giá theo thời gian???? Hình như là sale nhưng bị nhầm???
+
+
+10. GET /all/price : tổng doanh thu theo ngày, tuần, tháng -> tổng doanh thu thì phải theo vườn,...
+
+/ sale: -> truy xuất danh sách đơn bán
+- lấy danh sách bán buôn theo:
+1. Thời gian: từ ngày nào đến ngày nào, giờ nào đến giờ nào
+2. Theo vườn nào
+3. Rau nào
+=> quy định đầu ra: 
+- Tên rau
+- Tên vườn
+- Chủ sở hữu
+- Số lượng bán ra
+- Giá trị đơn hàng
+- Thời gian bán hàng
+
+/all/sale
+- Lấy tổng tiền bán buôn theo
+1. Thời gian: từ ngày nào đến ngày nào
+2. Theo vườn nào -> can be all
+3. Rau nào -> can be all
+4. Chủ sở hữu là ai -> can be all for admin
+
+Viết cho user trước, admin sau
+
+=> quy định đầu ra: tổng
+- 
+
+
+Cái khó ở đây mà mình gặp phải là findMany. Mình nên học cách viết findMany cho từng cái
+
+Mặc dù mình cảm thấy chưa hợp lí ít nhiều, nhưng mình cứ làm theo vì cũng không hại gì, có gì mình cải tiến sau cũng được
+
+
+Thực tế một chút đi, rau này, hôm nay nhập bao nhiêu, bán bao nhiêu, thế mới hợp lí chứ?
+Cái tài liệu này chưa cụ thể hay mình bị overthinking?
+
+SENSOR DATA -> API hỗ trợ get và visualize
+- Các thao tác với dữ liệu: nhiệt độ, độ ẩm
+1. GET /sensor-data/2025/12/01
+-> nhiệt độ trung bình trong 1 ngày, 1 tháng
+
+2. GET /sensor-data/2025/12/01
+-> độ ẩm trung bình trong 1 ngày, 1 tháng
+
+3. GET /sensor-data/
+
+
+4. GET /sensor-data/
