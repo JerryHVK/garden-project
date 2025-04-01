@@ -13,7 +13,7 @@ export class GardensController {
   @ApiOperation({description: "Add new garden"})
   @Post()
   create(@Request() req, @Body() createGardenDto: CreateGardenDto){
-    return this.gardensService.create(req.user.id, createGardenDto);
+    return this.gardensService.create(req.user, createGardenDto);
   }
 
   @ApiBearerAuth()
@@ -33,27 +33,27 @@ export class GardensController {
     page = +page;
     limit = +limit;
     limit = limit <= 100 ? limit : 5
-    return this.gardensService.findMany(req.user.id, page, limit, sortBy, sortOrder);
+    return this.gardensService.findMany(req.user, page, limit, sortBy, sortOrder);
   }
 
   @ApiBearerAuth()
   @ApiOperation({description: 'Get a garden by id'})
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) gardenId: number){
-    return this.gardensService.findOne(gardenId);
+  findOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number){
+    return this.gardensService.findOne(req.user, gardenId);
   }
 
   @ApiBearerAuth()
   @ApiOperation({description: 'Update a garden'})
   @Patch(':id')
-  updateOne(@Param('id', ParseIntPipe) gardenId: number, @Body() updateGardenDto: UpdateGardenDto){
-
+  updateOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number, @Body() updateGardenDto: UpdateGardenDto){
+    return this.gardensService.update(req.user, gardenId, updateGardenDto);
   }
 
   @ApiBearerAuth()
   @ApiOperation({description: 'Delete a garden'})
   @Delete(':id')
-  deleteOne(@Param('id', ParseIntPipe) gardenId: number) {
-    return this.gardensService.delete(gardenId);
+  deleteOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number) {
+    return this.gardensService.delete(req.user, gardenId);
   }
 }

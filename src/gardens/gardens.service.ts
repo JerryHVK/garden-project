@@ -3,7 +3,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGardenDto } from './dto/create-garden.dto';
 import { UpdateGardenDto } from './dto/update-garden.dto';
 import { ResponseObject } from 'src/common/response-object';
-import { take } from 'rxjs';
 
 @Injectable()
 export class GardensService {
@@ -14,10 +13,10 @@ export class GardensService {
     return existingGarden;
   }
 
-  async create(userId: number, createGardenDto: CreateGardenDto) {
+  async create(user: any, createGardenDto: CreateGardenDto) {
     const newGarden = await this.prisma.garden.create({
       data: {
-        userId: userId,
+        userId: user.id,
         name: createGardenDto.name
       }
     })
@@ -26,7 +25,7 @@ export class GardensService {
   }
 
   async findMany(
-    userId: number,
+    user: any,
     page: number = 1,
     limit: number = 10,
     sortBy: string = 'name',
@@ -40,22 +39,22 @@ export class GardensService {
         [sortBy]: sortOrder
       },
       where:{
-        userId: userId
+        userId: user.id
       }
     });
     return new ResponseObject(HttpStatus.OK, "success", gardens);
   }
 
-  async findOne(gardenId: number) {
+  async findOne(user: any, gardenId: number) {
     const garden = await this.checkExistingGarden(gardenId);
-    if(!garden){
+    if(!garden || garden.userId != user.userId){
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
     }
 
     return new ResponseObject(HttpStatus.OK, "success", garden);
   }
 
-  async update(gardenId: number, updateGardenDto: UpdateGardenDto) {
+  async update(user: any, gardenId: number, updateGardenDto: UpdateGardenDto) {
     const garden = await this.checkExistingGarden(gardenId);
     if(!garden){
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
@@ -71,7 +70,7 @@ export class GardensService {
     return new ResponseObject(HttpStatus.OK, "Updated garden successfully", updatedGarden);
   }
 
-  async delete(gardenId: number) {
+  async delete(user: any, gardenId: number) {
     const garden = await this.checkExistingGarden(gardenId);
     if(!garden){
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");

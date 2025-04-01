@@ -7,14 +7,16 @@
 
 #define DHTPIN 4
 #define DHTTYPE DHT22
-#define DELAY_TIME 5000 //5 seconds
+#define DELAY_TIME 5000 //delay 5 second before publish data
+#define GARDEN_ID 2 // fixed gardenId for the device
 
 //  define the wifi and MQTT ip address
 const char* ssid = "YOOTEK HOLDINGS";
 const char* password = "yootek@123"; 
 const char *mqtt_server = "broker.emqx.io";
 const int mqtt_port = 1883;
-const char *pub_topic = "device/data/sub";
+const char *pub_topic = "device/data";
+const char *sub_topic = "device/control";
 
 
 
@@ -37,28 +39,19 @@ float temp = 0.0, humid = 0.0;
 
 // setup
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
-  
-  //  setup wifi
   setupWifi();
- 
-  //  mqtt client connect to mqtt broker
   client.setServer(mqtt_server, mqtt_port);
-
+  client.setCallback(callback);
   dht.begin();
 }
 
 // loop
 void loop() {
-  // put your main code here, to run repeatedly:
-
-  //  check wifi connection at each loop
   if(WiFi.status() != WL_CONNECTED) {
     setupWifi();
   }
 
-  //  check the mqtt connection at each loop
   if (!client.connected()) {
     reconnect();
   }
@@ -69,16 +62,11 @@ void loop() {
 }
 
 void loopForData(){
-  // Wait a few seconds between measurements.
   delay(DELAY_TIME);
 
-  // Reading temperature or humidity takes about 250 milliseconds!
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float h = dht.readHumidity();
-  // Read temperature as Celsius (the default)
   float t = dht.readTemperature();
 
-  // Check if any reads failed and exit early (to try again).
   if (isnan(h) || isnan(t)) {
     Serial.println(F("Failed to read from DHT sensor!"));
     return;
@@ -95,7 +83,6 @@ void loopForData(){
   sendData();
 }
 
-//  this "setup_wifi()" function is the code example from "Wifi.h" library
 void setupWifi() {
   WiFi.mode(WIFI_STA);
   delay(1000);
@@ -103,9 +90,7 @@ void setupWifi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.println("Connecting to WiFi");
-  readMacAddress();
-  Serial.println(mac_address);
-  
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -116,47 +101,45 @@ void setupWifi() {
 }
 
 
-//  this "reconnect()" functions is from the example of "PubSubClient" library
 void reconnect() {
-  // Loop until we're reconnected
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
 
     // Create a random client ID
     String clientId = "ESP32Client-";
-    clientId += String(random(0xffff), HEX);
-    // Attempt to connect
+    clientId += GARDEN_ID;
+
     if (client.connect(clientId.c_str())) {
-      Serial.println("connected");
+      client.subscribe(sub_topic);
+      Serial.print("connected, sub_topic: ");
+      Serial.println(sub_topic);
     } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
+      Serial.println("failed, try again in 5 seconds");
       delay(5000);
     }
   }
 }
 
+void callback(char* topic, byte* payload, unsigned int length){
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i=0;i<length;i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+}
 
 void sendData(){
   JsonDocument doc;
-  doc["deviceNumber"] = mac_address;
+  doc["gardenId"] = GARDEN_ID;
   doc["temperature"] = temp;
   doc["humidity"] = humid;
   char dataString[256];
   serializeJson(doc, dataString);
   client.publish(pub_topic, dataString);
-}
-
-void readMacAddress(){
-  uint8_t baseMac[6];
-  esp_err_t ret = esp_wifi_get_mac(WIFI_IF_STA, baseMac);
-  if (ret == ESP_OK) {
-    sprintf(mac_address,"%02x:%02x:%02x:%02x:%02x:%02x",
-                  baseMac[0], baseMac[1], baseMac[2],
-                  baseMac[3], baseMac[4], baseMac[5]);
-  } else {
-    Serial.println("Failed to read MAC address");
-  }
+  Serial.print("Published [");
+  Serial.print(pub_topic);
+  Serial.print("]: ");
+  Serial.println(dataString);
 }

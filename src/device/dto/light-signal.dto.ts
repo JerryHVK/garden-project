@@ -1,7 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsOptional } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional } from "class-validator";
 
 export class LightSignalDto {
+    @ApiProperty({example: "2", required: true})
+    @IsNumber()
+    @IsNotEmpty()
+    gardenId: number;
+
     @ApiProperty({example: "false", required: false})
     @IsBoolean()
     @IsOptional()

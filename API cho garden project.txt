@@ -96,3 +96,65 @@ SENSOR DATA -> API hỗ trợ get và visualize
 
 
 4. GET /sensor-data/
+
+
+
+
+--------------------------------------------
+
+Mình phải nhìn xa hơn với tư cách là một người thiết kế
+Mình không chỉ thực thi, thực thi là điều làm sau khi thiết kế
+Thiết kế những API nó như nào, để hợp lí, để phù hợp, để gọn gàng, để đầy đủ, để rõ ràng
+
+
+Những nhu cầu của user:
+- thêm vườn mới
+- xem danh sách các vườn
+- xem thông tin một vườn
+- update một vườn
+- xóa một vườn
+
+- thêm rau cho vườn
+- xem danh sách rau: theo vườn, toàn bộ, lọc theo tên (để xem những vườn nào có rau này)
+- xem chi tiết của một rau
+- update một rau
+- xóa một rau
+
+- xem tổng doanh số bán hàng
+	- trong khoảng thời gian
+	- của vườn nào
+	- của loại rau nào
+	- 
+
+- À Khang, tôi muốn biết tổng doanh số của chúng ta thu được trong tháng này là bao nhiêu
+- Tôi muốn xem của mỗi vườn
+- Thế trong vườn này, các loại rau thu được như nào?
+
+- Tôi muốn đưa ra bảng so sánh giữa tất cả các rau trong tất cả các vườ, với doanh số thu đực từ chúng trong tháng, để xem khách hàng đang quan tâm đế những loại rau nào
+
+Đáng ra nên có một bảng rau độc lập, và nối với garden bằng một bảng garden-vegetable
+
+Mình có nên viết lại cái thiết kế này?
+
+Mình nên viết lại cái thiết kế này, dù sao thì cũng đã dành thời gian rồi, mình nên làm trọn vẹn một chút, để còn dễ mở rộng
+
+Nhưng tất nhiên cũng có những thứ mình sẽ không nhìn thấy được, khi mình nghĩ cái này là đúng, chưa chắc nó đã đúng. 
+Trong thực tế, mình phải nhìn điều kiện của từng project, thực tế của từng project, để thiết kế sát với thực tế
+
+Những thứ thiết kế như vậy, hẳn cần những người ở cấp cao hơn một người thực thi.
+
+Mình muốn bàn lại với anh hướng dẫn một chút về cái thiết kế của project:
+
+- API cho admin thì có những cái nên viết chung với user, tức là xử lí phân loại user và admin trong một hàm, còn có những cai thì nên viết riêng đúng ko ạ?
+	- ví dụ: danh sách garden: Admin sẽ có thêm một cái lọc là user-id, còn user thì không
+	- gộp thành một thì swagger mô tả cái đó như nào?
+
+- Có cần một bảng vegetable riêng, độc lập, và một bảng garden-vegetable
+	- tức là vegetable là thứ chọn sẵn
+
+
+
+Không, mình cần nhìn ra, mình cần hình dung được cả hệ thống trong đầu mình, rồi mới thực thi.
+Đừng cứ làm tới đây hay tới đó như này, nó rất khó cho mình, rất tốn công sức thời gian luôn
+
+Vậy mình bắt đầu vẽ từ đâu, mình vẽ tạm cái gì đó đi, cho nó ra cái gì đó. 

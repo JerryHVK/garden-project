@@ -4,9 +4,12 @@ import { DeviceController } from './device.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { DeviceService } from './device.service';
+import { GardensModule } from 'src/gardens/gardens.module';
+import { SensorDataModule } from 'src/sensor-data/sensor-data.module';
 
 @Module({
   imports: [
+    GardensModule,
     ClientsModule.registerAsync([
       {
         name: "MQTT_SERVICE",
@@ -18,7 +21,8 @@ import { DeviceService } from './device.service';
           }
         })
       }
-    ])
+    ]),
+    SensorDataModule
   ],
   controllers: [DeviceController],
   providers: [DeviceGateway, DeviceService]
