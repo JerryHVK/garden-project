@@ -21,6 +21,8 @@ model User{
   address   String?   @db.Text
   gardens   Garden[]
   role      Role      @default(USER)
+  imageUrl  String?   @db.Text
+  locked    Boolean   @default(false)
 }
 
 enum Role {
@@ -47,7 +49,7 @@ model Vegetable{
   sales       Sale[]
   garden      Garden  @relation(fields: [gardenId], references: [id], onDelete: Cascade)
   gardenId    Int
-
+  imageUrl    String? @db.Text
 }
 
 model Sale{

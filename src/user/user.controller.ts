@@ -1,11 +1,14 @@
-import { Controller, Get, Param, Post, Body, Delete, ParseIntPipe, UseGuards, Patch, Request } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Delete, ParseIntPipe, UseGuards, Patch, Request, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDTO } from './dto/create-user-dto';
 import { UpdateUserDTO } from './dto/update-user-dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/common/roles.decorator';
 import { Role } from 'src/common/role.enum';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @Controller('user')
 export class UserController {
@@ -55,7 +58,23 @@ export class UserController {
         return await this.userService.deleteUser(id);
     }
 
+    // TODO: lock user
+    @ApiBearerAuth()
+    @UseGuards(RolesGuard)
+    @Roles(Role.Admin)
+    @Get(':id/lock')
+    async lockUser(@Param('id', ParseIntPipe) id: number) {
+        return await this.userService.lockUser(id);
+    }
 
+    // TODO: unlock user
+    @ApiBearerAuth()
+    @UseGuards(RolesGuard)
+    @Roles(Role.Admin)
+    @Get(':id/unlock')
+    async unlockUser(@Param('id', ParseIntPipe) id: number) {
+        return await this.userService.unlockUser(id);
+    }
 
 
 
@@ -79,4 +98,52 @@ export class UserController {
     }
 
 
+
+    // api allow user to upload image
+    @ApiBearerAuth()
+    @Post('/image/upload')
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                image: {
+                    type: 'string',
+                    format: 'binary',
+                },
+            },
+        },
+    })    
+    @UseInterceptors(FileInterceptor(
+        'image', 
+        {
+            storage: diskStorage({
+            destination: 'src/files/images/profiles',
+            filename: (req, file, callback) => {
+                const filename = `profile-${Date.now()}${extname(file.originalname)}`;
+                callback(null, filename);
+            }
+        })
+        }
+    ))
+    async uploadImage(@Request() req, @UploadedFile() file: Express.Multer.File){
+        return await this.userService.updateAvatar(req.user, file);
+    }
+
+    @ApiBearerAuth()
+    @ApiOkResponse({
+        description: 'Returns the user avatar image',
+        content: {
+            'application/octet-stream': {
+                schema: {
+                    type: 'string',
+                    format: 'binary',
+                },
+            },
+        },
+    })      
+    @Get('image/download')
+    async downloadImage(@Request() req){
+        return await this.userService.getAvatar(req.user);
+    }
 }

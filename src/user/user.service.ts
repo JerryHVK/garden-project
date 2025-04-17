@@ -1,8 +1,11 @@
 
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, StreamableFile } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDTO } from './dto/create-user-dto';
 import { UpdateUserDTO } from './dto/update-user-dto';
+import { ResponseObject } from 'src/common/response-object';
+import { createReadStream } from 'fs';
+import { join } from 'path';
 
 @Injectable()
 export class UserService {
@@ -95,7 +98,70 @@ export class UserService {
     }
   }
 
+  async updateAvatar(user: any, file: Express.Multer.File){
+    if(!file || file.size == 0){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, 'Invalid file');
+    }
+    
+    const existingUser = await this.checkExistingUserId(user.id);
 
+    if(!existingUser){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, 'Invalid userId');
+    }
+    
+    await this.prisma.user.update({
+      where: {id: user.id},
+      data: {
+        imageUrl: file.filename
+      }
+    })
+
+    return new ResponseObject(HttpStatus.CREATED, 'Uploaded file successfully');
+  }
+
+  async getAvatar(user: any){
+    const existingUser = await this.checkExistingUserId(user.id);
+
+    if(!existingUser){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, 'Invalid userId');
+    }
+
+    if(!existingUser.imageUrl){
+      return new ResponseObject(HttpStatus.NO_CONTENT, 'No avatar uploaded');
+    }
+
+    const file = createReadStream(join('src/files/images/profiles', existingUser.imageUrl));
+    return new StreamableFile(file);
+  }
+
+
+  async lockUser(userId: number){
+    const existingUser = await this.checkExistingUserId(userId);
+    if(!existingUser){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, 'Invalid userId');
+    }
+
+    const lockedUser = await this.prisma.user.update({
+      where: {id: userId},
+      data: {locked: true}
+    })
+
+    return new ResponseObject(HttpStatus.OK, 'success', lockedUser);
+  }
+
+  async unlockUser(userId: number){
+    const existingUser = await this.checkExistingUserId(userId);
+    if(!existingUser){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, 'Invalid userId');
+    }
+
+    const unlockedUser = await this.prisma.user.update({
+      where: {id: userId},
+      data: {locked: false}
+    })
+
+    return new ResponseObject(HttpStatus.OK, 'success', unlockedUser);
+  }
 
 
 
@@ -111,4 +177,7 @@ export class UserService {
   async checkExistingUserEmail(email: string){
     return await this.prisma.user.findUnique({where: {email}});
   }
+
+
+
 }

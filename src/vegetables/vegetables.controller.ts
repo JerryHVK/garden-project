@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { VegetablesService } from './vegetables.service';
 import { CreateVegetableDto } from './dto/create-vegetable.dto';
 import { UpdateVegetableDto } from './dto/update-vegetable.dto';
@@ -7,6 +7,9 @@ import { UpdateVegetablePriceDto } from './dto/update-vegetable-price.dto';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/common/roles.decorator';
 import { Role } from 'src/common/role.enum';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @Controller('vegetables')
 export class VegetablesController {
@@ -78,9 +81,54 @@ export class VegetablesController {
   }
 
 
+  // TODO: Update the image for vegetable
+  // api allow user to upload image
+  @ApiBearerAuth()
+  @Post(':id/image/upload')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+      schema: {
+          type: 'object',
+          properties: {
+              image: {
+                  type: 'string',
+                  format: 'binary',
+              },
+          },
+      },
+  })    
+  @UseInterceptors(FileInterceptor(
+      'image', 
+      {
+          storage: diskStorage({
+          destination: 'src/files/images/vegetables',
+          filename: (req, file, callback) => {
+              const filename = `vegetable-${Date.now()}${extname(file.originalname)}`;
+              callback(null, filename);
+          }
+      })
+      }
+  ))
+  async uploadImage(@Request() req, @Param('id', ParseIntPipe) vegetableId: number, @UploadedFile() file: Express.Multer.File){
+      return await this.vegetablesService.updateImage(req.user, vegetableId, file);
+  }
 
-
-
+  @ApiBearerAuth()
+  @ApiOkResponse({
+      description: 'Returns the vegetable image',
+      content: {
+          'application/octet-stream': {
+              schema: {
+                  type: 'string',
+                  format: 'binary',
+              },
+          },
+      },
+  })      
+  @Get(':id/image/download')
+  async downloadImage(@Request() req, @Param('id', ParseIntPipe) vegetableId: number){
+      return await this.vegetablesService.getImage(req.user, vegetableId);
+  }
 
 
 
