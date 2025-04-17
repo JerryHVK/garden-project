@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Res } from '@nestjs/common';
+import { HttpStatus, Injectable, Res, StreamableFile } from '@nestjs/common';
 import { CreateVegetableDto } from './dto/create-vegetable.dto';
 import { UpdateVegetablePriceDto } from './dto/update-vegetable-price.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -6,6 +6,8 @@ import { UpdateVegetableDto } from './dto/update-vegetable.dto';
 import { ResponseObject } from 'src/common/response-object';
 import { GardensService } from 'src/gardens/gardens.service';
 import { Role } from 'src/common/role.enum';
+import { createReadStream } from 'fs';
+import { join } from 'path';
 
 @Injectable()
 export class VegetablesService {
@@ -144,6 +146,58 @@ export class VegetablesService {
     });
 
     return new ResponseObject(HttpStatus.OK, "Updated vegetable successfully", updatedVegetable);
+  }
+
+
+  // TODO: update the images
+  async updateImage(user: any, vegetableId: number, file: Express.Multer.File){
+    if(!file){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, 'Invalid file');
+    }
+
+    // check if the vegetable id is valid
+    const vegetable = await this.prisma.vegetable.findUnique({where: {id: vegetableId}});
+    if(!vegetable){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+    }
+
+    // check if the vegetable belongs to the garden of this user
+    const garden = await this.gardensService.checkExistingGarden(vegetable.gardenId);
+    if(!garden || garden.userId != user.id){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+    }
+
+    const updatedVegetable = await this.prisma.vegetable.update({
+      where: {id: vegetableId},
+      data: {
+        imageUrl: file.filename
+      }
+    });
+    
+    return new ResponseObject(HttpStatus.OK, "Updated image successfully", updatedVegetable);
+  }
+
+
+  // TODO: get the vegetable image
+  async getImage(user: any, vegetableId: number){
+    // check if the vegetable id is valid
+    const vegetable = await this.prisma.vegetable.findUnique({where: {id: vegetableId}});
+    if(!vegetable){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+    }
+
+    // check if the vegetable belongs to the garden of this user
+    const garden = await this.gardensService.checkExistingGarden(vegetable.gardenId);
+    if(!garden || garden.userId != user.id){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+    }
+
+    if(!vegetable.imageUrl){
+      return new ResponseObject(HttpStatus.NO_CONTENT, 'No image uploaded');
+    }
+
+    const file = createReadStream(join('src/files/images/vegetables', vegetable.imageUrl));
+    return new StreamableFile(file);
   }
 
 

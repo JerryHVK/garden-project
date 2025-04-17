@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { SignupUserDTO } from './dto/signup-user-dto';
 import { LoginUserDTO } from './dto/login-user-dto';
 import * as bcrypt from 'bcrypt';
+import { ResponseObject } from 'src/common/response-object';
 
 @Injectable()
 export class AuthService {
@@ -41,6 +42,11 @@ export class AuthService {
         statusCode: 400,
         message: "Email or password is wrong"
       }
+    }
+
+    // check if the user is locked or not
+    if(user.locked == true){
+      return new ResponseObject(HttpStatus.FORBIDDEN, 'This account is locked');
     }
 
     // login successful, return access token

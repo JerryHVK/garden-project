@@ -12,7 +12,7 @@ export class DeviceService {
     private gardensService: GardensService
   ){}
 
-  async controlLight(user: any, topic: string, lightSignalDto: LightSignalDto){
+  async controlLight(user: any, lightSignalDto: LightSignalDto){
     const garden = await this.gardensService.checkExistingGarden(lightSignalDto.gardenId);
     if(user.role == Role.Admin){
       if(!garden){
@@ -28,6 +28,9 @@ export class DeviceService {
       return new ResponseObject(HttpStatus.BAD_REQUEST, "What is your role?");
     }
     
+    const topic = "device/" + lightSignalDto.gardenId.toString() + "/control";
+    // check topic
+    // console.log("controlling topic: " + topic);
     await this.client.emit(topic, lightSignalDto);
     return new ResponseObject(HttpStatus.OK, "success");
   }

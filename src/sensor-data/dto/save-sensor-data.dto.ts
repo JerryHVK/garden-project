@@ -4,7 +4,7 @@ import { IsBoolean, IsNotEmpty, IsNumber, IsOptional } from "class-validator";
 export class SaveSensorDataDto {
     @ApiProperty({example: "2", required: true})
     @IsNumber()
-    @IsNotEmpty()
+    @IsOptional()
     gardenId: number;
 
     @ApiProperty({example: "27.3", required: true})
