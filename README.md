@@ -114,5 +114,12 @@ LƯU Ý: Trong dữ liệu giả đã có tài khoản USER và ADMIN sẵn đ�
 ## 2. Admin
 
 ## 3. Device
+- Device fix cứng với gardenId
+- Trong demo này, gardenId của device là 2
+- Device gửi dữ liệu về server mỗi 5s, thông quan mqtt broker
+
+
+
+
 
 ## 4. WebSocket

@@ -84,6 +84,8 @@ export class VegetablesController {
   // TODO: Update the image for vegetable
   // api allow user to upload image
   @ApiBearerAuth()
+  @UseGuards(RolesGuard)
+  @Roles(Role.User)
   @Post(':id/image/upload')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -113,6 +115,9 @@ export class VegetablesController {
       return await this.vegetablesService.updateImage(req.user, vegetableId, file);
   }
 
+
+  // TODO: Get the vegetable image
+  // api allow user to upload image
   @ApiBearerAuth()
   @ApiOkResponse({
       description: 'Returns the vegetable image',

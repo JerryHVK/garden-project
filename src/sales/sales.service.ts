@@ -3,98 +3,194 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { SaveTransactionDto } from './dto/save-transaction.dto';
 import { VegetablesService } from 'src/vegetables/vegetables.service';
 import { ResponseObject } from 'src/common/response-object';
+import { Role } from 'src/common/role.enum';
+import { GardensService } from 'src/gardens/gardens.service';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class SalesService {
-  constructor(private prisma: PrismaService, private vegetablesService: VegetablesService){}
+  constructor(
+    private prisma: PrismaService, 
+    private vegetablesService: VegetablesService, 
+    private gardensService: GardensService,
+    private userService: UserService,
+  ){}
 
-  async create(saveTransactionDto: SaveTransactionDto){
-    const vegetable = await this.vegetablesService.checkExistingVegetable(saveTransactionDto.vegetableId);
-    if(!vegetable){
-      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
-    }
-
-    const sale = await this.prisma.sale.create({
-      data: {
-        quantity: saveTransactionDto.quantity,
-        totalPrice: saveTransactionDto.totalPrice,
-        vegetableId: saveTransactionDto.vegetableId,
-        gardenId: vegetable.gardenId
+  async getTotalSalesOfOneVegetable(vegetableId: number): Promise<number>{
+    const sales = await this.prisma.sale.findMany({
+      where: {vegetableId: vegetableId},
+      select: {totalPrice: true},
+    });
+    let totalSales = 0;
+    for(let sale of sales){
+      if(sale.totalPrice){
+        totalSales += sale.totalPrice;
       }
-    })
-    return new ResponseObject(HttpStatus.CREATED, "success", sale);
+    }
+    return totalSales;
   }
 
+  async getTotalSalesOfOneGarden(gardenId: number): Promise<number>{
+    const sales = await this.prisma.sale.findMany({
+      where: {gardenId: gardenId},
+      select: {totalPrice: true},
+    });
+    let totalSales = 0;
+    for(let sale of sales){
+      if(sale.totalPrice){
+        totalSales += sale.totalPrice;
+      }
+    }
+    return totalSales;
+  }
 
-  async getTotalSalesOfGardens(
-    user: any,
+  async getTotalSalesOfOneUser(userId: number): Promise<number>{
+    const gardens = await this.prisma.garden.findMany({
+      where: {userId: userId},
+      select: {id: true},
+    });
+    let totalSales = 0;
+    for(let garden of gardens){
+      totalSales += await this.getTotalSalesOfOneGarden(garden.id);
+    }
+    // console.log("User total sales: ", totalSales)
+    return totalSales;
+  }
+
+  async getSalesOfUsers(
     page: number = 1,
     limit: number = 10,
     sortBy: string = 'name',
     sortOrder: 'asc' | 'desc' = 'asc',
   ){
     const skip = (page-1)*limit;
-    const totalSales = await this.prisma.garden.findMany({
+    const users = await this.prisma.user.findMany({
       take: limit,
       skip,
-      where: {
-        userId: user.id, // Filter by the userId
-      },
       select: {
         id: true,
         name: true,
-        sales: {
-          select: {
-            totalPrice: true, // Select the totalPrice from Sale model
-          },
-        },
+        email: true,
       },
+      where: {
+        role: Role.User,
+      }
     });
     
-    const gardensWithTotalSales = totalSales.map(garden => ({
-      gardenId: garden.id,
-      gardenName: garden.name,
-      totalSale: garden.sales.reduce((sum, sale) => sum + (sale.totalPrice || 0), 0), // Sum up totalPrice for each garden
-    }));
-    
-    return new ResponseObject(HttpStatus.OK, 'success', gardensWithTotalSales);
+    interface Result {
+      userId: number,
+      userName: string,
+      email: string,
+      totalSales: number,
+    };
+    const result: Result[] = [];
+
+    for(let user of users){
+      const totalSales = await this.getTotalSalesOfOneUser(user.id);
+      result.push({
+        userId: user.id,
+        userName: user.name,
+        email: user.email,
+        totalSales: totalSales
+      });
+    }
+    return new ResponseObject(HttpStatus.OK, "success", result);
+  }
+
+  async getSalesOfOneUser(
+    userId: number,
+    page: number = 1,
+    limit: number = 10,
+    sortBy: string = 'name',
+    sortOrder: 'asc' | 'desc' = 'asc',
+  ){
+    const user = await this.userService.checkExistingUserId(userId);
+    if(!user){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid userId");
+    }
+
+    const skip = (page-1)*limit;
+    const gardens = await this.prisma.garden.findMany({
+      take: limit,
+      skip,
+      where: {userId: userId},
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    interface Result {
+      gardenId: number,
+      gardenName: string,
+      ownerName: string,
+      totalSales: number,
+    };
+    const result: Result[] = [];
+
+    for(let garden of gardens){
+      const totalSales = await this.getTotalSalesOfOneGarden(garden.id);
+      result.push({
+        gardenId: garden.id,
+        gardenName: garden.name,
+        ownerName: user.name,
+        totalSales,
+      });
+    }
+    return new ResponseObject(HttpStatus.OK, "success", result); 
   }
 
   async getSalesOfOneGarden(
-    user: any, 
+    user: any,
     gardenId: number,
     page: number = 1,
     limit: number = 10,
     sortBy: string = 'name',
     sortOrder: 'asc' | 'desc' = 'asc',
   ){
+    const garden = await this.gardensService.checkExistingGarden(gardenId);
+    if(!garden){
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
+    }
+
+    if(user.role == Role.Admin){
+
+    }
+    else if(user.role == Role.User){
+      if(garden.userId != user.id){
+        return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
+      }
+    }
+    else{
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "What is your role?");
+    }
+
     const skip = (page-1)*limit;
-    const totalVegetableSales = await this.prisma.vegetable.findMany({
+    const vegetables = await this.prisma.vegetable.findMany({
       take: limit,
       skip,
-      where: {
-        gardenId: gardenId, // Filter by gardenId
-      },
+      where: {gardenId: gardenId},
       select: {
         id: true,
         name: true,
-        sales: {
-          select: {
-            totalPrice: true, // Select totalPrice from the Sale model
-          },
-        },
       },
     });
-    
-    const vegetablesWithTotalSales = totalVegetableSales.map(vegetable => ({
-      vegetableId: vegetable.id,
-      vegetableName: vegetable.name,
-      totalSale: vegetable.sales.reduce((sum, sale) => sum + (sale.totalPrice || 0), 0),
-    }));
 
-    
-    return new ResponseObject(HttpStatus.OK, 'success', vegetablesWithTotalSales);
+    interface Result {
+      vegetableId: number,
+      vegetableName: string,
+      totalSales: number,
+    };
+    const result: Result[] = [];
+
+    for(let vegetable of vegetables){
+      const totalSales = await this.getTotalSalesOfOneVegetable(vegetable.id);
+      result.push({
+        vegetableId: vegetable.id,
+        vegetableName: vegetable.name,
+        totalSales,
+      });
+    }
+    return new ResponseObject(HttpStatus.OK, "success", result); 
   }
-
-  
 }
