@@ -37,7 +37,7 @@ export class VegetablesService {
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
     }
 
-    const newVegetable = this.prisma.vegetable.create({
+    const newVegetable = await this.prisma.vegetable.create({
       data: {
         name: createVegetableDto.name,
         inQuantity: createVegetableDto.inQuantity || null,
@@ -188,8 +188,20 @@ export class VegetablesService {
 
     // check if the vegetable belongs to the garden of this user
     const garden = await this.gardensService.checkExistingGarden(vegetable.gardenId);
-    if(!garden || garden.userId != user.id){
+    if(!garden){
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+    }
+
+    if(user.role == Role.Admin){
+
+    }
+    else if(user.role == Role.User){
+      if(garden.userId != user.id){
+        return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
+      }
+    }
+    else{
+      return new ResponseObject(HttpStatus.BAD_REQUEST, "What is yoru role?");
     }
 
     if(!vegetable.imageUrl){
@@ -252,7 +264,7 @@ export class VegetablesService {
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
     }
 
-    const updatedVegetablePrice = this.prisma.vegetable.update({
+    const updatedVegetablePrice = await this.prisma.vegetable.update({
       where: {id: vegetableId},
       data: {price: updateVegetablePriceDto.price}
     });
@@ -275,7 +287,7 @@ export class VegetablesService {
       return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid vegetableId");
     }
 
-    const deletedVegetablePrice = this.prisma.vegetable.update({
+    const deletedVegetablePrice = await this.prisma.vegetable.update({
       where: {id: vegetableId},
       data: {price: null}
     });

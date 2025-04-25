@@ -17,8 +17,8 @@ export class GardensController {
   @UseGuards(RolesGuard)
   @Roles(Role.User)
   @Post()
-  create(@Request() req, @Body() createGardenDto: CreateGardenDto){
-    return this.gardensService.create(req.user, createGardenDto);
+  async create(@Request() req, @Body() createGardenDto: CreateGardenDto){
+    return await this.gardensService.create(req.user, createGardenDto);
   }
 
   @ApiBearerAuth()
@@ -28,7 +28,7 @@ export class GardensController {
   @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Sort by field' })
   @ApiQuery({ name: 'sortOrder', required: false, type: String, enum: ['asc', 'desc'], description: 'Sort order' })
   @Get()
-  findMany(
+  async findMany(
     @Request() req,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -38,14 +38,14 @@ export class GardensController {
     page = +page;
     limit = +limit;
     limit = limit <= 100 ? limit : 5
-    return this.gardensService.findMany(req.user, page, limit, sortBy, sortOrder);
+    return await this.gardensService.findMany(req.user, page, limit, sortBy, sortOrder);
   }
 
   @ApiBearerAuth()
   @ApiOperation({description: 'Get a garden by id'})
   @Get(':id')
-  findOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number){
-    return this.gardensService.findOne(req.user, gardenId);
+  async findOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number){
+    return await this.gardensService.findOne(req.user, gardenId);
   }
 
   @ApiBearerAuth()
@@ -53,8 +53,8 @@ export class GardensController {
   @UseGuards(RolesGuard)
   @Roles(Role.User)
   @Patch(':id')
-  updateOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number, @Body() updateGardenDto: UpdateGardenDto){
-    return this.gardensService.update(req.user, gardenId, updateGardenDto);
+  async updateOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number, @Body() updateGardenDto: UpdateGardenDto){
+    return await this.gardensService.update(req.user, gardenId, updateGardenDto);
   }
 
   @ApiBearerAuth()
@@ -62,7 +62,7 @@ export class GardensController {
   @UseGuards(RolesGuard)
   @Roles(Role.User)
   @Delete(':id')
-  deleteOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number) {
-    return this.gardensService.delete(req.user, gardenId);
+  async deleteOne(@Request() req, @Param('id', ParseIntPipe) gardenId: number) {
+    return await this.gardensService.delete(req.user, gardenId);
   }
 }

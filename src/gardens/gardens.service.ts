@@ -20,7 +20,7 @@ export class GardensService {
         userId: user.id,
         name: createGardenDto.name
       }
-    })
+    });
 
     return new ResponseObject(HttpStatus.CREATED, "Created new garden successfully", newGarden);
   }
@@ -70,7 +70,7 @@ export class GardensService {
       }
     }
     else if(user.role == Role.User){
-      if(!garden || garden.userId != user.userId){
+      if(!garden || garden.userId != user.id){
         return new ResponseObject(HttpStatus.BAD_REQUEST, "Invalid gardenId");
       }
     }
