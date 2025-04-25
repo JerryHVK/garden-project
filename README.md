@@ -110,16 +110,19 @@ LƯU Ý: Trong dữ liệu giả đã có tài khoản USER và ADMIN sẵn đ�
 
 # Part 2: Demo and Details
 ## 1. User
+[![Part1-User](https://img.youtube.com/vi/wSk59AgfERQ/0.jpg)](https://www.youtube.com/watch?v=wSk59AgfERQ)
 
 ## 2. Admin
+[![Part2-Admin](https://img.youtube.com/vi/Eq5ZQvkWRKE/0.jpg)](https://www.youtube.com/watch?v=Eq5ZQvkWRKE)
 
 ## 3. Device
 - Device fix cứng với gardenId
 - Trong demo này, gardenId của device là 2
 - Device gửi dữ liệu về server mỗi 5s, thông quan mqtt broker
 
-
+[![Part3-Device](https://img.youtube.com/vi/VC2G2scxFHs/0.jpg)](https://www.youtube.com/watch?v=VC2G2scxFHs)
 
 
 
 ## 4. WebSocket
+[![Part4-WebSocket](https://img.youtube.com/vi/geZy1z8v9_8/0.jpg)](https://www.youtube.com/watch?v=geZy1z8v9_8)
