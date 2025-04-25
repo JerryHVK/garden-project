@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Request, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Post, Request, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { Ctx, MessagePattern, MqttContext, Payload } from '@nestjs/microservices';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { DeviceGateway } from './device.gateway';
@@ -8,6 +8,8 @@ import { LightSignalDto } from './dto/light-signal.dto';
 import { SensorDataService } from 'src/sensor-data/sensor-data.service';
 import { SaveSensorDataDto } from 'src/sensor-data/dto/save-sensor-data.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 @Controller('device')
 export class DeviceController {
@@ -15,23 +17,25 @@ export class DeviceController {
     private deviceGateway: DeviceGateway, 
     private deviceService: DeviceService,
     private sensorDataService: SensorDataService
-  ){
-
-  }
-  private static sub_topic: string;
+  ){}
 
   @Public()
   @MessagePattern('device/+/data')
+  // @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   handleComingMessageFromBroker(@Payload() saveSensorDataDto: SaveSensorDataDto, @Ctx() context: MqttContext){
-    saveSensorDataDto.gardenId = Number(context.getTopic().split('/')[1]);
+    // console.log(saveSensorDataDto);
+    let subTopic;
+    if(subTopic = Number.parseInt(context.getTopic().split('/')[1])){
+      // console.log(subTopic);
+      saveSensorDataDto.gardenId = subTopic;
 
-    // console.log("gardenId: ", saveSensorDataDto.gardenId);
+      // save it to database
+      this.sensorDataService.saveData(saveSensorDataDto);
 
-    // save it to database
-    this.sensorDataService.saveData(saveSensorDataDto);
-
-    // send to websocket client
-    this.deviceGateway.emitDataToClient(saveSensorDataDto);
+      // send to websocket client
+      this.deviceGateway.emitDataToClient(saveSensorDataDto);
+    }
   }
 
   @ApiBearerAuth()

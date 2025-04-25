@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Request, ParseIntPipe, Param, Query } from '@nestjs/common';
+import { Controller, Post, Body, Request, ParseIntPipe, Param, Query, Get } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { SaveTransactionDto } from './dto/save-transaction.dto';
@@ -22,7 +22,7 @@ export class SalesController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of items per page'})
   @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Sort by field' })
   @ApiQuery({ name: 'sortOrder', required: false, type: String, enum: ['asc', 'desc'], description: 'Sort order' })
-  @Post('/gardens')
+  @Get('/gardens')
   getTotalSalesOfGardens(
     @Request() req,
     @Query('page') page: number = 1,
@@ -42,7 +42,7 @@ export class SalesController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of items per page'})
   @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Sort by field' })
   @ApiQuery({ name: 'sortOrder', required: false, type: String, enum: ['asc', 'desc'], description: 'Sort order' })
-  @Post('/gardens/:id')
+  @Get('/gardens/:id')
   getSalesOfOneGarden(
     @Request() req, 
     @Param('id', ParseIntPipe) gardenId: number,

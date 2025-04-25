@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, Delete, ParseIntPipe, UseGuards, Patch, Request, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Delete, ParseIntPipe, UseGuards, Patch, Request, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDTO } from './dto/create-user-dto';
 import { UpdateUserDTO } from './dto/update-user-dto';
@@ -84,16 +84,25 @@ export class UserController {
     // API - FOR BOTH USER AND ADMIN
 
     // get user profile: GET /user/profile
+    // @ApiBearerAuth()
+    // @Get('profile') // tại sao để là Post thì chạy được, còn để là Get thì dính lỗi 403 - forbidden?
+    // // bí ẩn lớn nhất rồi đấy
+    // async getUserProfile(@Request() req) {
+    //     return await this.userService.findOne(req.user.id);
+    // }
+
     @ApiBearerAuth()
-    @Get('/profile')
+    @Post('profile')
     async getUserProfile(@Request() req) {
         return await this.userService.findOne(req.user.id);
     }
+    
+
 
     // update basic info: PATCH: /user
     @ApiBearerAuth()
     @Patch()
-    async updateUserBasicInfo(@Request() req, updateUserDTO: UpdateUserDTO) {
+    async updateUserBasicInfo(@Request() req, @Body() updateUserDTO: UpdateUserDTO) {
         return await this.userService.updateUserBasicInfo(req.user.id, updateUserDTO);
     }
 

@@ -6,6 +6,7 @@ import { UpdateUserDTO } from './dto/update-user-dto';
 import { ResponseObject } from 'src/common/response-object';
 import { createReadStream } from 'fs';
 import { join } from 'path';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -85,6 +86,8 @@ export class UserService {
         message: "In valid userId"
       }
     }
+
+    updateUserDTO.password = await bcrypt.hash(updateUserDTO.password, 10);
 
     const updatedUser = await this.prisma.user.update({
       where: {id},
